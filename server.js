@@ -5,7 +5,11 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// ১. কোনো ফোল্ডার ছাড়াই সরাসরি রুট ডিরেক্টরির index.html লোড করার রুট
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Environment Variables থেকে তথ্য নেওয়া
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -15,7 +19,7 @@ const FILE_PATH = process.env.FILE_PATH || 'index.html'; // মেইন রি�
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
-// ১. মেইন রিপো থেকে ফাইল পড়া
+// ২. মেইন রিপো থেকে ফাইল পড়া
 async function getFileContent() {
     const { data } = await octokit.repos.getContent({
         owner: REPO_OWNER,
@@ -26,7 +30,7 @@ async function getFileContent() {
     return { content, sha: data.sha };
 }
 
-// ২. বর্তমান লিংকগুলোর তালিকা রিটার্ন করার API
+// ৩. বর্তমান লিংকগুলোর তালিকা রিটার্ন করার API
 app.get('/api/links', async (req, res) => {
     try {
         const { content } = await getFileContent();
@@ -51,7 +55,7 @@ app.get('/api/links', async (req, res) => {
     }
 });
 
-// ৩. নতুন লিংক যুক্ত করার API
+// ৪. নতুন লিংক যুক্ত করার API
 app.post('/api/links/add', async (req, res) => {
     try {
         const { title, url } = req.body;
@@ -87,7 +91,7 @@ app.post('/api/links/add', async (req, res) => {
     }
 });
 
-// ৪. লিংক রিমুভ করার API
+// ৫. লিংক রিমুভ করার API
 app.post('/api/links/delete', async (req, res) => {
     try {
         const { url } = req.body;
@@ -95,7 +99,6 @@ app.post('/api/links/delete', async (req, res) => {
 
         const { content, sha } = await getFileContent();
 
-        // নির্দিষ্ট <li> আইটেম রিমুভ করা
         const regex = new RegExp(`<li class="link-item">[\\s\\S]*?<a href="${url}"[\\s\\S]*?<\\/li>`, 'g');
         const updatedContent = content.replace(regex, '');
 
